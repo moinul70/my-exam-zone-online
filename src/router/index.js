@@ -1,7 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import LoginView from '../components/LoginView.vue'
-import DashboardView from '../components/DashboardView.vue'
+import LoginView from '../components/views/LoginView.vue'
+import DashboardView from '../components/views/DashboardView.vue'
+import Layout from '../components/layouts/Layout.vue'
 import { auth } from '../auth'
+
 const routes = [
   {
     path: '/',
@@ -10,10 +12,15 @@ const routes = [
   },
   {
     path: '/dashboard',
-    name: 'dashboard',
-    component:DashboardView
-    // Lazy-load this component for better performance
-   // component: () => import('../components/DashboardView.vue')
+    component: Layout,
+    //meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        name: 'dashboard',
+        component: DashboardView
+      }
+    ]
   }
 ]
 
@@ -22,17 +29,12 @@ const router = createRouter({
   routes
 })
 
-
-
-// ... existing router config ...
-
-router.beforeEach((to, from, next) => {
-    console.log(auth.isAuthenticated);
-  if (to.path === '/dashboard' && auth.isAuthenticated) {
-    next('/') // Redirect to login if authenticated
-  } else {
-    next()
-  }
-})
+// router.beforeEach((to, from, next) => {
+//   if (to.meta.requiresAuth && !auth.isAuthenticated) {
+//     next('/')
+//   } else {
+//     next()
+//   }
+// })
 
 export default router

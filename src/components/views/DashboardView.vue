@@ -2,8 +2,9 @@
 import { ref } from 'vue'
 
 
+
 </script>
 
 <template>
-<div>Dashboard</div>
+ <h2>hoooo</h2>
 </template>
