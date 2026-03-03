@@ -268,12 +268,14 @@ onUnmounted(() => {
             <form>
 
               <div v-for="answer in answers" :key="answer.id" class="form-check mb-2">
+               
                 <input class="form-check-input" :type="questions[0].correct_count > 1 ? 'checkbox' : 'radio'"
                   name="answer" :id="'ans-' + answer.id" :value="answer.id" v-model="selectedAnswer" />
 
-                <label class="form-check-label" :for="'ans-' + answer.id">
-                  {{ answer.letter }} {{ answer.answer }}
-                </label>
+                <label class="form-check-label d-flex align-items-start ps-4" :for="'ans-' + answer.id">
+    <span class="fw-bold me-2">{{ answer.letter }}.</span>
+    <span class="answer-text">{{ answer.answer }}</span>
+  </label>
               </div>
             </form>
           </div>
@@ -355,5 +357,25 @@ onUnmounted(() => {
   position: sticky;
   top: 10px;
   z-index: 1000;
+}
+.custom-answer-row {
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.custom-answer-row:hover {
+  background-color: #f0f7ff; /* Light blue tint on hover */
+  border-color: #cfe2ff;
+}
+
+/* Ensure the radio/checkbox is aligned with the top of multi-line text */
+.form-check-input {
+  margin-top: 0.3rem; 
+}
+
+.answer-text {
+  line-height: 1.5;
+  color: #4a5568;
 }
 </style>
