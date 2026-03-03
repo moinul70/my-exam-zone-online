@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, computed } from "vue";
 import api from "../../services/api";
 import { useRouter } from 'vue-router'
 
@@ -209,6 +209,14 @@ const stopTimer = () => {
     timerInterval = null;
   }
 };
+const timerClass = computed(() => {
+  if (estimatedTime.value < 300) { // Less than 5 mins
+    return 'bg-danger text-white border-danger animate-pulse';
+  } else if (estimatedTime.value < 900) { // Less than 15 mins
+    return 'bg-warning text-dark border-warning';
+  }
+  return 'bg-white text-primary border-primary';
+});
 
 onMounted(async () => {
   // 1. Fetch questions (doesn't affect the timer ref)
@@ -226,11 +234,16 @@ onUnmounted(() => {
 <template>
   <div class="container my-4">
     <div class="row justify-content-center">
-      <div class="col-12 col-md-8">
+      <div class="col-12">
         <div class="card shadow-sm">
           <div class="card-header d-flex justify-content-between align-items-center">
             <span class="fw-semibold">Question {{ meta.current_page }} of {{ meta.total }}</span>
-            <span class="badge bg-warning text-dark">Time Left: {{ formatTime(estimatedTime) }}</span>
+            <div class="timer-wrapper d-flex align-items-center justify-content-end mb-3">
+              <div :class="['timer-card shadow-sm px-3 py-2 rounded-pill border', timerClass]">
+                <i class="bi bi-clock-history me-2"></i> <span class="fw-bold fs-5">Time Left: {{
+                  formatTime(estimatedTime) }}</span>
+              </div>
+            </div>
 
             <button class="btn btn-danger" @click="
               completExam();
@@ -307,3 +320,40 @@ onUnmounted(() => {
     </div>
   </div>
 </template>
+<style scoped>
+.timer-card {
+  min-width: 180px;
+  text-align: center;
+  transition: all 0.3s ease;
+  /* Smooth color transitions */
+  letter-spacing: 1px;
+  font-family: 'Monaco', 'Consolas', monospace;
+  /* Monospaced font keeps numbers from jumping */
+}
+
+/* The "Panic" animation for when time is very low */
+.animate-pulse {
+  animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+  }
+}
+
+/* Ensures the timer stays visible even when scrolling if you want */
+.timer-wrapper {
+  position: sticky;
+  top: 10px;
+  z-index: 1000;
+}
+</style>
