@@ -1,16 +1,18 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import api from "../../services/api";
 import { useRouter } from 'vue-router'
 
 
-const questions = ref([]); // Changed null to [] to prevent template errors
+const examCompletedFlag = ref(false);
+const questions = ref([]);
 const answers = ref([]);
 const error = ref(null);
-const loading = ref(false); // Added loading state
-const selectedAnswer = ref([]); // Needed for v-model
-const meta = ref([]); // Needed for v-model
+const loading = ref(false);
+const selectedAnswer = ref([]);
+const meta = ref([]);
 const isAnswerVisible = ref(false);
+const estimatedTime = ref(0);
 const pagination = ref({
   first: 1,
   last: 1,
@@ -18,7 +20,18 @@ const pagination = ref({
   prev: null,
 });
 const topic = useRouter().currentRoute.value.params.topic
-// Added 'url' parameter to handle pagination clicks
+const fetchExamDetails = async (url = `/get-exam-details/${topic}`) => {
+  try {
+    const response = await api.get(url);
+    const examresult = response.data.data || response.data;
+    console.log('Exam Details:', examresult);
+    const timeInMinutes = examresult?.estimated_time || 0;
+    estimatedTime.value = timeInMinutes * 60;
+  } catch (err) {
+    error.value = err.response?.data?.message || "Failed to load";
+  }
+
+};
 const fetchQuestions = async (url = `/exam/questions/topic/${topic}`) => {
   loading.value = true;
   error.value = null;
@@ -26,8 +39,6 @@ const fetchQuestions = async (url = `/exam/questions/topic/${topic}`) => {
   try {
     const { data } = await api.get(url);
 
-    // If your JSON root is the array, use 'data'.
-    // If your backend wraps it in 'data.data', keep your current logic.
     const result = data.data || data;
 
     questions.value = result;
@@ -36,6 +47,35 @@ const fetchQuestions = async (url = `/exam/questions/topic/${topic}`) => {
     if (result.length > 0) {
       answers.value = result[0].answers;
       meta.value = data.meta;
+
+      questions.value[0].UserTakeExamDetail.forEach(detail => {
+        if (detail.question_answers_id) {
+          try {
+
+            const parsedData = JSON.parse(detail.question_answers_id);
+
+            if (Array.isArray(parsedData)) {
+
+              const stringIds = parsedData.map(id => String(id));
+
+              if (questions.value[0].correct_count > 1) {
+
+                selectedAnswer.value.push(...stringIds);
+              } else {
+
+                selectedAnswer.value = stringIds[0];
+              }
+            } else {
+
+              selectedAnswer.value = String(parsedData);
+            }
+          } catch (e) {
+            // Fallback for plain strings
+            selectedAnswer.value = String(detail.question_answers_id);
+          }
+        }
+      });
+
     }
 
     // Update pagination from the API response
@@ -63,7 +103,6 @@ const saveAndnextQuestion = async () => {
     ? selectedAnswer.value
     : [selectedAnswer.value];
 
-  console.log("Sending answer_ids:", answerIds);
 
   await api.post("/take-exam", {
 
@@ -88,13 +127,13 @@ const nextQuestion = () => {
 const lastQuestion = () => {
   if (pagination.value.last_page) {
     fetchQuestions(pagination.value.last_page);
-    selectedAnswer.value = []; // Reset selection for next question
+    selectedAnswer.value = [];
   }
 };
 const firstQuestion = () => {
   if (pagination.value.first_page) {
     fetchQuestions(pagination.value.first_page);
-    selectedAnswer.value = []; // Reset selection for next question
+    selectedAnswer.value = [];
   }
 };
 
@@ -104,8 +143,85 @@ const prevQuestion = () => {
     selectedAnswer.value = [];
   }
 };
+const router = useRouter();
+const completExam = async () => {
+  if (!confirm("Are you sure you want to submit the exam? You cannot undo this action.")) {
+    return;
+  }
 
-onMounted(() => fetchQuestions());
+  try {
+    // await api.post("/complete-exam", {
+    //   topic_id: questions.value[0].topic_id,
+    // });
+    examCompletedFlag.value = true;
+    alert("Exam completed successfully!");
+    router.push({
+      name: 'examResult',
+      params: { topic },
+      state: { examCompletedFlag: examCompletedFlag.value } // Pass the flag as state
+    });
+
+  } catch (err) {
+    console.error("Error completing exam:", err);
+    alert(err.response?.data?.message || "Failed to complete exam");
+  }
+};
+const completExamByTimesUp = async () => {
+
+  try {
+    await api.post("/complete-exam", {
+      topic_id: questions.value[0].topic_id,
+    });
+    examCompletedFlag.value = true;
+    alert("Exam completed successfully!");
+  } catch (err) {
+    alert(err.response?.data?.message || "Failed to complete exam");
+  }
+};
+
+const formatTime = (seconds) => {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+
+let timerInterval = null;
+
+const startTimer = () => {
+  // Prevent multiple intervals from starting if fetchQuestions is called again
+  if (timerInterval) return;
+
+  timerInterval = setInterval(() => {
+    if (estimatedTime.value > 0) {
+      estimatedTime.value--;
+    } else {
+      stopTimer();
+      alert("Time's up! Exam will be submitted.");
+      completExamByTimesUp();
+    }
+  }, 1000);
+};
+
+const stopTimer = () => {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+};
+
+onMounted(async () => {
+  // 1. Fetch questions (doesn't affect the timer ref)
+  await fetchQuestions();
+  await fetchExamDetails();
+  // 2. Start the countdown
+  startTimer();
+});
+
+// Cleanup timer if the user leaves the page
+onUnmounted(() => {
+  stopTimer();
+});
 </script>
 <template>
   <div class="container my-4">
@@ -114,29 +230,36 @@ onMounted(() => fetchQuestions());
         <div class="card shadow-sm">
           <div class="card-header d-flex justify-content-between align-items-center">
             <span class="fw-semibold">Question {{ meta.current_page }} of {{ meta.total }}</span>
-            <span class="badge bg-warning text-dark">Time Left: 01:45</span>
+            <span class="badge bg-warning text-dark">Time Left: {{ formatTime(estimatedTime) }}</span>
+
+            <button class="btn btn-danger" @click="
+              completExam();
+            isAnswerVisible = false;
+            ">
+              Final Submit
+            </button>
           </div>
 
           <div class="card-body">
             <!-- Question -->
-            <h5 class="mb-3" v-if="questions.length > 0">
-              {{ questions[0].question }}
-            </h5>
+            <div v-if="questions.length > 0"
+              class="question-container p-4 mb-4 rounded shadow-sm bg-light border-start border-primary border-4">
+              <h5 class="question-text mb-0">
+                <span class="text-muted me-2">Q:</span> {{ questions[0].question }}
+              </h5>
+            </div>
 
             <pre class="bg-light p-3 rounded small"></pre>
 
             <!-- Options -->
             <form>
 
-
               <div v-for="answer in answers" :key="answer.id" class="form-check mb-2">
-                <input class="form-check-input"
-                  :checked="questions[0]?.prepareExamDetails[0]?.question_answers_id?.includes(answer.id)"
-                  :type="questions[0].correct_count > 1 ? 'checkbox' : 'radio'" name="answer" :id="answer.id"
-                  :value="answer.id" v-model="selectedAnswer" />
+                <input class="form-check-input" :type="questions[0].correct_count > 1 ? 'checkbox' : 'radio'"
+                  name="answer" :id="'ans-' + answer.id" :value="answer.id" v-model="selectedAnswer" />
 
-                <label class="form-check-label" :for="answer.letter">
-                  {{ answer.letter }}. {{ answer.answer }}
+                <label class="form-check-label" :for="'ans-' + answer.id">
+                  {{ answer.letter }} {{ answer.answer }}
                 </label>
               </div>
             </form>
@@ -174,8 +297,9 @@ onMounted(() => fetchQuestions());
               saveAndnextQuestion();
             isAnswerVisible = false;
             ">
-              {{ pagination.next_page_url ? 'Save & Next' : 'Save & Submit' }}
+              {{ pagination.next_page_url ? 'Save & Next' : 'Save' }}
             </button>
+
 
           </div>
         </div>

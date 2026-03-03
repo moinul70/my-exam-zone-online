@@ -16,9 +16,8 @@ const startExam = () => {
 };
 
 onMounted(async () => {
-  const response = await api.post('/prepare-exam', { topic: topic });
-  examData.value = response.data;
-  console.log('Exam Data:', examData.value);
+ const isCompleted = window.history.state?.examCompletedFlag
+  console.log('Was exam completed?', isCompleted);
 });
 </script>
 
@@ -32,10 +31,10 @@ onMounted(async () => {
           </div>
 
           <div class="card-body">
-            <h5 class="mb-3">Exam Topic: {{ topic }}</h5>
+            <!-- <h5 class="mb-3">Exam Topic: {{ topic }}</h5>
             <h5 class="mb-3">Total Questions: {{ examData?.question_count }}</h5>
             <h5 class="mb-3">Total Marks: {{ examData?.total_score }}</h5>
-            <h5 class="mb-3">Total Time: {{ examData?.estimated_time }} mins</h5>
+            <h5 class="mb-3">Total Time: {{ examData?.estimated_time }} mins</h5> -->
           
             <form>
               <div class="mb-2">
