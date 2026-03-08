@@ -13,6 +13,7 @@ const selectedAnswer = ref([]);
 const meta = ref([]);
 const isAnswerVisible = ref(false);
 const estimatedTime = ref(0);
+const examDetails = ref(null);
 const pagination = ref({
   first: 1,
   last: 1,
@@ -23,9 +24,8 @@ const topic = useRouter().currentRoute.value.params.topic
 const fetchExamDetails = async (url = `/get-exam-details/${topic}`) => {
   try {
     const response = await api.get(url);
-    const examresult = response.data.data || response.data;
-    console.log('Exam Details:', examresult);
-    const timeInMinutes = examresult?.estimated_time || 0;
+    examDetails.value = response.data.data || response.data;
+    const timeInMinutes = examDetails.value.estimated_time || 0;
     estimatedTime.value = timeInMinutes * 60;
   } catch (err) {
     error.value = err.response?.data?.message || "Failed to load";
@@ -52,23 +52,21 @@ const fetchQuestions = async (url = `/exam/questions/topic/${topic}`) => {
         if (detail.question_answers_id) {
           try {
 
-            const parsedData = JSON.parse(detail.question_answers_id);
-
+            //const parsedData = JSON.parse(detail.question_answers_id);
+            const parsedData = detail.question_answers_id;
             if (Array.isArray(parsedData)) {
-
-              const stringIds = parsedData.map(id => String(id));
+              const normalizedIds = Array.isArray(parsedData)
+                ? parsedData.map(id => String(id))
+                : [String(parsedData)];
+              //const stringIds = parsedData.map(id => String(id));
 
               if (questions.value[0].correct_count > 1) {
-
-                selectedAnswer.value.push(...stringIds);
+                selectedAnswer.value.push(...normalizedIds);
               } else {
-
-                selectedAnswer.value = stringIds[0];
+                selectedAnswer.value = normalizedIds[0];
               }
-            } else {
-
-              selectedAnswer.value = String(parsedData);
             }
+
           } catch (e) {
             // Fallback for plain strings
             selectedAnswer.value = String(detail.question_answers_id);
@@ -102,7 +100,7 @@ const saveAndnextQuestion = async () => {
   const answerIds = Array.isArray(selectedAnswer.value)
     ? selectedAnswer.value
     : [selectedAnswer.value];
-
+  console.log('Submitting answers:', answerIds);
 
   await api.post("/take-exam", {
 
@@ -150,14 +148,14 @@ const completExam = async () => {
   }
 
   try {
-    // await api.post("/complete-exam", {
-    //   topic_id: questions.value[0].topic_id,
-    // });
+    await api.post("/submit-exam", {
+      exam_id: examDetails.value.id
+    });
     examCompletedFlag.value = true;
     alert("Exam completed successfully!");
     router.push({
       name: 'examResult',
-      params: { topic },
+      params: { examId: examDetails.value.id },
       state: { examCompletedFlag: examCompletedFlag.value } // Pass the flag as state
     });
 
@@ -169,8 +167,9 @@ const completExam = async () => {
 const completExamByTimesUp = async () => {
 
   try {
-    await api.post("/complete-exam", {
+    await api.post("/submit-exam", {
       topic_id: questions.value[0].topic_id,
+      exam_id: examDetails.value.id
     });
     examCompletedFlag.value = true;
     alert("Exam completed successfully!");
@@ -268,14 +267,14 @@ onUnmounted(() => {
             <form>
 
               <div v-for="answer in answers" :key="answer.id" class="form-check mb-2">
-               
+
                 <input class="form-check-input" :type="questions[0].correct_count > 1 ? 'checkbox' : 'radio'"
-                  name="answer" :id="'ans-' + answer.id" :value="answer.id" v-model="selectedAnswer" />
+                  name="answer" :id="'ans-' + answer.id" :value="String(answer.id)" v-model="selectedAnswer" />
 
                 <label class="form-check-label d-flex align-items-start ps-4" :for="'ans-' + answer.id">
-    <span class="fw-bold me-2">{{ answer.letter }}.</span>
-    <span class="answer-text">{{ answer.answer }}</span>
-  </label>
+                  <span class="fw-bold me-2">{{ answer.letter }}.</span>
+                  <span class="answer-text">{{ answer.answer }}</span>
+                </label>
               </div>
             </form>
           </div>
@@ -358,6 +357,7 @@ onUnmounted(() => {
   top: 10px;
   z-index: 1000;
 }
+
 .custom-answer-row {
   transition: background-color 0.2s ease;
   cursor: pointer;
@@ -365,13 +365,14 @@ onUnmounted(() => {
 }
 
 .custom-answer-row:hover {
-  background-color: #f0f7ff; /* Light blue tint on hover */
+  background-color: #f0f7ff;
+  /* Light blue tint on hover */
   border-color: #cfe2ff;
 }
 
 /* Ensure the radio/checkbox is aligned with the top of multi-line text */
 .form-check-input {
-  margin-top: 0.3rem; 
+  margin-top: 0.3rem;
 }
 
 .answer-text {
