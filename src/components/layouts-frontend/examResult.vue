@@ -56,6 +56,18 @@ onMounted(async () => {
                   <div class="text-muted small">Correct</div>
                 </div>
               </div>
+              <div class="col-12">
+                <div class="p-3 border rounded-3 bg-light d-flex justify-content-between align-items-center">
+                  <span class="text-muted"><i class="bi bi-clock-history me-2"></i>Achieved Score</span>
+                  <span class="fw-bold">{{ examResultData?.examDetails[0]?.achieve_score }}</span>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="p-3 border rounded-3 bg-light d-flex justify-content-between align-items-center">
+                  <span class="text-muted"><i class="bi bi-clock-history me-2"></i>Total Score</span>
+                  <span class="fw-bold">{{ examResultData?.examDetails[0]?.total_score }}</span>
+                </div>
+              </div>
 
               <div class="col-12">
                 <div class="p-3 border rounded-3 bg-light d-flex justify-content-between align-items-center">
@@ -63,6 +75,7 @@ onMounted(async () => {
                   <span class="fw-bold">{{ examResultData?.examDetails[0]?.estimated_time }} mins</span>
                 </div>
               </div>
+
             </div>
 
             <div class="mt-5 d-grid gap-2">

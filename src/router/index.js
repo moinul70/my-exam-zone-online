@@ -10,6 +10,8 @@ import Practice from '../components/layouts-frontend/practice.vue'
 import Exam from '../components/layouts-frontend/exam.vue'
 import PrepareExam from '../components/layouts-frontend/prepareExam.vue'
 import ExamResult from '../components/layouts-frontend/examResult.vue'
+import questionsAnswer from '../components/layouts/questionsAnswer.vue'
+import ProviderTopicView from '../components/views/ProviderTopicView.vue'
 
 const routes = [
 
@@ -59,7 +61,7 @@ const routes = [
     component: LoginView
   },
   {
-    path: '/admin/dashboard',
+    path: '/provider/dashboard',
     component: Layout,
     meta: { requiresAuth: true },
     children: [
@@ -67,6 +69,16 @@ const routes = [
         path: '',
         name: 'dashboard',
         component: DashboardView
+      },
+      {
+        path: '/provider/questions-answer/:topic',
+        name: 'provider-questions-answer',
+        component: questionsAnswer
+      },
+      {
+        path: '/provider/topic-questions/:topic',
+        name: 'provider-topic',
+        component: ProviderTopicView
       }
     ]
   }

@@ -21,7 +21,7 @@ const toggleMenu = (menuName) => {
             />
             <!--end::Brand Image-->
             <!--begin::Brand Text-->
-            <span class="brand-text fw-light">AdminLTE 4</span>
+            <span class="brand-text fw-light">Exam Zone</span>
             <!--end::Brand Text-->
           </a>
           <!--end::Brand Link-->
@@ -57,20 +57,20 @@ const toggleMenu = (menuName) => {
                   <li class="nav-item" :class="{ 'menu-open': menuOpen.level2 }">
                     <a href="#" class="nav-link" @click.prevent="toggleMenu('level2')">
                       <i class="nav-icon bi bi-circle"></i>
-                      <p>Dashboard v2</p>
+                      <p>Manage Topic</p>
                       <i class="nav-arrow bi bi-chevron-right"></i>
                     </a>
                     <ul class="nav nav-treeview">
                       <li class="nav-item">
                         <a href="#" class="nav-link">
                           <i class="nav-icon bi bi-record-circle-fill"></i>
-                          <p>Level 3</p>
+                          <p>Upload</p>
                         </a>
                       </li>
                       <li class="nav-item">
                         <a href="#" class="nav-link">
                           <i class="nav-icon bi bi-record-circle-fill"></i>
-                          <p>Level 3</p>
+                         <RouterLink to="/provider/topic-questions/:topic">Topics</RouterLink>
                         </a>
                       </li>
                       <li class="nav-item">

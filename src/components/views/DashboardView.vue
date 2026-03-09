@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
+import { RouterView } from 'vue-router';
 </script>
 
 <template>
- <h2>hoooo</h2>
 </template>
