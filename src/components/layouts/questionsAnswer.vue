@@ -4,16 +4,13 @@ import api from "../../services/api";
 import { useRouter } from 'vue-router'
 
 
-const examCompletedFlag = ref(false);
 const questions = ref([]);
-const answers = ref([]);
 const error = ref(null);
 const loading = ref(false);
 const selectedAnswer = ref([]);
-const meta = ref([]);
-const isAnswerVisible = ref(false);
-const estimatedTime = ref(0);
-const examDetails = ref(null);
+const isSubmitting = ref(false);
+const nextUrl = ref(null);  // Store the URL for the next page
+const isLoading = ref(false);
 const pagination = ref({
   first: 1,
   last: 1,
@@ -21,29 +18,22 @@ const pagination = ref({
   prev: null,
 });
 const topic = useRouter().currentRoute.value.params.topic
-const fetchExamDetails = async (url = `/get-exam-details/${topic}`) => {
-  try {
-    const response = await api.get(url);
-    examDetails.value = response.data.data || response.data;
-    const timeInMinutes = examDetails.value.estimated_time || 0;
-    estimatedTime.value = timeInMinutes * 60;
-  } catch (err) {
-    error.value = err.response?.data?.message || "Failed to load";
-  }
 
-};
 const fetchQuestions = async (url = `provider/exam/questions/topic/${topic}`) => {
   loading.value = true;
   error.value = null;
+  // if (isLoading.value) return;
+
+  // isLoading.value = true;
 
   try {
     const { data } = await api.get(url);
 
     const result = data.data || data;
 
-    questions.value = result;
+    questions.value = [...questions.value, ...result];
 // console.log('Fetched Questions:', questions.value[0].question);
-
+nextUrl.value = data.links.next;
     // Update pagination from the API response
     pagination.value = {
       current_page: data.meta.current_page || 1,
@@ -59,31 +49,7 @@ const fetchQuestions = async (url = `provider/exam/questions/topic/${topic}`) =>
     loading.value = false;
   }
 };
-const saveAndnextQuestion = async () => {
-  if (!selectedAnswer.value || selectedAnswer.value.length === 0) {
-    alert("Please select an answer");
-    return;
-  }
-  // Convert to array if radio selected
-  const answerIds = Array.isArray(selectedAnswer.value)
-    ? selectedAnswer.value
-    : [selectedAnswer.value];
-  console.log('Submitting answers:', answerIds);
 
-  await api.post("/take-exam", {
-
-    topic_id: questions.value[0].topic_id,
-    question_id: questions.value[0].id,
-    answer_ids: answerIds,
-  });
-
-  // Reset
-  selectedAnswer.value = [];
-
-  if (pagination.value.next_page_url) {
-    fetchQuestions(pagination.value.next_page_url);
-  }
-};
 const nextQuestion = () => {
   if (pagination.value.next_page_url) {
     fetchQuestions(pagination.value.next_page_url);
@@ -110,54 +76,48 @@ const prevQuestion = () => {
   }
 };
 const router = useRouter();
-const completExam = async () => {
-  if (!confirm("Are you sure you want to submit the exam? You cannot undo this action.")) {
-    return;
-  }
+
+const handleSubmit = async () => {
+  isSubmitting.value = true;
+
+  // We map the reactive array to a plain object for the API
+  const payload = {
+    // If you are editing an existing exam, pass its ID
+    //prepare_exam_id: currentExamId.value, 
+    
+    questions: questions.value.map(q => {
+      return {
+        id: q.id,               // The ID of the question being edited
+        question_text: q.question, // The updated text from the input box
+        
+        // Map the multiple answers for this specific question
+        answers: q.answers.map(ans => {
+          return {
+            id: ans.id,         // The ID of the answer being edited
+            answer_text: ans.answer, // The updated answer text
+            is_correct: ans.is_correct // The 1 or 0 from your checkbox
+          };
+        })
+      };
+    })
+  };
 
   try {
-    await api.post("/submit-exam", {
-      exam_id: examDetails.value.id
-    });
-    examCompletedFlag.value = true;
-    alert("Exam completed successfully!");
-    router.push({
-      name: 'examResult',
-      params: { examId: examDetails.value.id },
-      state: { examCompletedFlag: examCompletedFlag.value } // Pass the flag as state
-    });
-
-  } catch (err) {
-    console.error("Error completing exam:", err);
-    alert(err.response?.data?.message || "Failed to complete exam");
+    console.log("Submitting payload:", payload);
+    const response = await api.post('provider/exam/questions/update-batch', payload);
+    toast.success("Changes saved successfully!");
+  } catch (error) {
+    console.error("Update failed", error.response?.data);
+    alert("Check console for validation errors");
+  } finally {
+    isSubmitting.value = false;
   }
-};
-const completExamByTimesUp = async () => {
-
-  try {
-    await api.post("/submit-exam", {
-      topic_id: questions.value[0].topic_id,
-      exam_id: examDetails.value.id
-    });
-    examCompletedFlag.value = true;
-    alert("Exam completed successfully!");
-  } catch (err) {
-    alert(err.response?.data?.message || "Failed to complete exam");
-  }
-};
-
-const formatTime = (seconds) => {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
 
 
 onMounted(async () => {
   // 1. Fetch questions (doesn't affect the timer ref)
   await fetchQuestions();
-  await fetchExamDetails();
 });
 
 </script>
@@ -172,19 +132,19 @@ onMounted(async () => {
       </div>
 
       <div class="card-body bg-light">
-        <form @submit.prevent="handleFinalSubmit">
+        <form @submit.prevent="handleSubmit">
           <div v-for="(item, qIndex) in questions" :key="qIndex" class="mb-4 bg-white p-4 rounded shadow-sm border">
             
             <div class="mb-3">
               <label class="form-label fw-bold text-muted small uppercase">Question {{ qIndex + 1 }}</label>
               <div class="input-group">
                 <span class="input-group-text bg-primary text-white border-0"><i class="bi bi-pencil-square"></i></span>
-                <input 
-                  type="text" 
-                  v-model="item.question" 
-                  class="form-control form-control-lg border-start-0" 
-                  placeholder="Enter your question here..."
-                />
+               <textarea 
+  v-model="item.question" 
+  class="form-control border-start-0" 
+  @input="($event) => { $event.target.style.height = 'auto'; $event.target.style.height = $event.target.scrollHeight + 'px'; }"
+  style="overflow:hidden"
+></textarea>
               </div>
             </div>
 
@@ -193,21 +153,23 @@ onMounted(async () => {
               <div v-for="(ans, aIndex) in item.answers" :key="aIndex" class="input-group mb-2 shadow-none">
                 
                 <div class="input-group-text bg-white border-end-0">
-                  <input 
-                    class="form-check-input mt-0" 
-                    type="checkbox" 
-                    :name="'correct-' + qIndex" 
-                    :checked="ans.is_correct === 1"
-                    @change="setCorrectAnswer(qIndex, aIndex)"
-                  />
-                </div>
+  <input 
+    class="form-check-input mt-0" 
+    type="checkbox" 
+    v-model="ans.is_correct"
+    :true-value="1"
+    :false-value="0"
+    :name="'correct_check_' + qIndex + '_' + aIndex"
+  />
+</div>
 
-                <input 
-                  type="text" 
-                  v-model="ans.answer" 
-                  class="form-control border-start-0" 
-                  :placeholder="'Option ' + String.fromCharCode(65 + aIndex)"
-                />
+<input 
+  type="text" 
+  v-model="ans.answer" 
+  class="form-control border-start-0 transition-all" 
+  :class="{ 'border-success bg-success-subtle fw-bold': ans.is_correct === 1 }"
+  :placeholder="'Option ' + String.fromCharCode(64 + aIndex)"
+/>
 
                 <button v-if="item.answers.length > 2" @click="removeAnswer(qIndex, aIndex)" class="btn btn-outline-danger border-start-0" type="button">
                   <i class="bi bi-x"></i>
@@ -223,9 +185,24 @@ onMounted(async () => {
           <div class="d-grid mt-5">
             <button type="submit" class="btn btn-primary btn-lg shadow" :disabled="isSubmitting">
               <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
-              {{ isSubmitting ? 'Saving Exam...' : 'Finalize & Submit Exam' }}
+              {{ isSubmitting ? 'Saving...' : 'Finalize & Submit' }}
             </button>
           </div>
+          <div class="text-center mt-5 mb-4">
+      <button 
+        v-if="nextUrl" 
+        @click="fetchQuestions(nextUrl)" 
+        :disabled="isLoading"
+        class="btn btn-outline-primary px-5 rounded-pill shadow-sm"
+      >
+        <span v-if="isLoading" class="spinner-border spinner-border-sm me-2"></span>
+        {{ isLoading ? 'Loading...' : 'Load More Questions' }}
+      </button>
+      
+      <p v-else class="text-muted small">
+        <i class="bi bi-check2-all me-1"></i> All questions loaded
+      </p>
+    </div>
         </form>
       </div>
     </div>
