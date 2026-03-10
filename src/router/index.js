@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LoginView from '../components/views/LoginView.vue'
+import ProviderLoginView from '../components/views/ProviderLoginView.vue'
 import DashboardView from '../components/views/DashboardView.vue'
 import Layout from '../components/layouts/Layout.vue'
 // import { auth } from '../auth'
@@ -15,11 +16,6 @@ import ProviderTopicView from '../components/views/ProviderTopicView.vue'
 
 const routes = [
 
-  //   { 
-  //   path: '/:pathMatch(.*)*', 
-  //   name: 'NotFound', 
-  //   component: NotFoundView 
-  // }
   {
     path: '/',
     name: '',
@@ -38,19 +34,19 @@ const routes = [
       {
         path: 'prepare-exam/:topic',
         name: 'prepare-exam',
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true,loginRoute: 'login' },
         component: PrepareExam
       },
       {
         path: 'exam/:topic',
         name: 'exam',
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true,loginRoute: 'login' },
         component: Exam
       },
       {
         path: 'exam-result/:topic',
         name: 'examResult',
-        meta: { requiresAuth: true },
+        meta: { requiresAuth: true,loginRoute: 'login' },
         component: ExamResult
       }
     ]
@@ -61,13 +57,23 @@ const routes = [
     component: LoginView
   },
   {
+    path: '/login',
+    name: 'login',
+    component: LoginView
+  },
+  {
+    path: '/provider-login',
+    name: 'provider-login',
+    component: ProviderLoginView
+  },
+  {
     path: '/provider/dashboard',
     component: Layout,
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true,loginRoute: 'provider-login' },
     children: [
       {
         path: '',
-        name: 'dashboard',
+        name: 'provider-dashboard',
         component: DashboardView
       },
       {
@@ -92,17 +98,24 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
 const isAuthenticated = authStore.isAuthenticated;
+
   
-  // Check if the route requires authentication (e.g., using meta fields)
-  if (to.matched.some(record => record.meta.requiresAuth) && !isAuthenticated) {
-    // Store the intended path in local storage or a store (Vuex/Pinia)
-  
-    localStorage.setItem('intendedRoute', to.path);
-    
-    // Redirect to the login page
-    next({ name: 'login', query: { redirect: to.fullPath } }); // assuming you have a named 'login' route
+ const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+
+  if (requiresAuth && !isAuthenticated) {
+
+    const loginRoute =
+      to.matched.find(record => record.meta.loginRoute)?.meta.loginRoute || 'login'
+
+    localStorage.setItem('intendedRoute', to.fullPath)
+
+    next({
+      name: loginRoute,
+      query: { redirect: to.fullPath }
+    })
+
   } else {
-    next(); // Continue to the intended route
+    next()
   }
 });
 

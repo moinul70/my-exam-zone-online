@@ -32,6 +32,20 @@ export const useAuthStore = defineStore('auth', () => {
       throw error
     }
   }
+  async function providerLogin(credentials) {
+    try {
+      const { data } = await api.post('/provider/login', credentials)
+      token.value = data.token
+      user.value=data.user_name
+
+      localStorage.setItem('token', token.value);
+
+      api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`
+      return data
+    } catch (error) {
+      throw error
+    }
+  }
   async function logout() {
     try {
       await api.get('/logout')
@@ -45,7 +59,7 @@ export const useAuthStore = defineStore('auth', () => {
       delete api.defaults.headers.common['Authorization']
     }
   }
-  return { token, isAuthenticated, login, logout, user }
+  return { token, isAuthenticated, login, logout, user,providerLogin}
 
   {
     persist: true

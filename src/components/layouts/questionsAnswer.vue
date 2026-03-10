@@ -32,8 +32,8 @@ const fetchQuestions = async (url = `provider/exam/questions/topic/${topic}`) =>
     const result = data.data || data;
 
     questions.value = [...questions.value, ...result];
-// console.log('Fetched Questions:', questions.value[0].question);
-nextUrl.value = data.links.next;
+    // console.log('Fetched Questions:', questions.value[0].question);
+    nextUrl.value = data.links.next;
     // Update pagination from the API response
     pagination.value = {
       current_page: data.meta.current_page || 1,
@@ -84,12 +84,12 @@ const handleSubmit = async () => {
   const payload = {
     // If you are editing an existing exam, pass its ID
     //prepare_exam_id: currentExamId.value, 
-    
+
     questions: questions.value.map(q => {
       return {
         id: q.id,               // The ID of the question being edited
         question_text: q.question, // The updated text from the input box
-        
+
         // Map the multiple answers for this specific question
         answers: q.answers.map(ans => {
           return {
@@ -134,49 +134,42 @@ onMounted(async () => {
       <div class="card-body bg-light">
         <form @submit.prevent="handleSubmit">
           <div v-for="(item, qIndex) in questions" :key="qIndex" class="mb-4 bg-white p-4 rounded shadow-sm border">
-            
+
             <div class="mb-3">
               <label class="form-label fw-bold text-muted small uppercase">Question {{ qIndex + 1 }}</label>
               <div class="input-group">
                 <span class="input-group-text bg-primary text-white border-0"><i class="bi bi-pencil-square"></i></span>
-               <textarea 
-  v-model="item.question" 
-  class="form-control border-start-0" 
-  @input="($event) => { $event.target.style.height = 'auto'; $event.target.style.height = $event.target.scrollHeight + 'px'; }"
-  style="overflow:hidden"
-></textarea>
+                <textarea v-model="item.question" class="form-control border-start-0"
+                  @input="($event) => { $event.target.style.height = 'auto'; $event.target.style.height = $event.target.scrollHeight + 'px'; }"
+                  style="overflow:hidden"></textarea>
               </div>
             </div>
 
             <div class="ms-md-4 mt-3">
               <label class="form-label small fw-bold text-muted">Answers & Correct Key</label>
               <div v-for="(ans, aIndex) in item.answers" :key="aIndex" class="input-group mb-2 shadow-none">
-                
+
                 <div class="input-group-text bg-white border-end-0">
-  <input 
-    class="form-check-input mt-0" 
-    type="checkbox" 
-    v-model="ans.is_correct"
-    :true-value="1"
-    :false-value="0"
-    :name="'correct_check_' + qIndex + '_' + aIndex"
-  />
-</div>
+                  <input class="form-check-input mt-0" type="checkbox" v-model="ans.is_correct" :true-value="1"
+                    :false-value="0" :name="'correct_check_' + qIndex + '_' + aIndex" />
+                </div>
 
-<input 
-  type="text" 
-  v-model="ans.answer" 
-  class="form-control border-start-0 transition-all" 
-  :class="{ 'border-success bg-success-subtle fw-bold': ans.is_correct === 1 }"
-  :placeholder="'Option ' + String.fromCharCode(64 + aIndex)"
-/>
+                <!-- <input type="text" v-model="ans.answer" class="form-control border-start-0 transition-all"
+                  :class="{ 'border-success bg-success-subtle fw-bold': ans.is_correct === 1 }"
+                  :placeholder="'Option ' + String.fromCharCode(64 + aIndex)" /> -->
 
-                <button v-if="item.answers.length > 2" @click="removeAnswer(qIndex, aIndex)" class="btn btn-outline-danger border-start-0" type="button">
+                <textarea v-model="ans.answer" class="form-control border-start-0 transition-all"
+                  :class="{ 'border-success bg-success-subtle fw-bold': ans.is_correct === 1 }"
+                  :placeholder="'Option ' + String.fromCharCode(64 + aIndex)">{{ ans.answer }}</textarea> 
+
+                <button v-if="item.answers.length > 2" @click="removeAnswer(qIndex, aIndex)"
+                  class="btn btn-outline-danger border-start-0" type="button">
                   <i class="bi bi-x"></i>
                 </button>
               </div>
-              
-              <button @click="addOption(qIndex)" type="button" class="btn btn-link btn-sm text-decoration-none p-0 mt-1">
+
+              <button @click="addOption(qIndex)" type="button"
+                class="btn btn-link btn-sm text-decoration-none p-0 mt-1">
                 + Add Option
               </button>
             </div>
@@ -189,20 +182,16 @@ onMounted(async () => {
             </button>
           </div>
           <div class="text-center mt-5 mb-4">
-      <button 
-        v-if="nextUrl" 
-        @click="fetchQuestions(nextUrl)" 
-        :disabled="isLoading"
-        class="btn btn-outline-primary px-5 rounded-pill shadow-sm"
-      >
-        <span v-if="isLoading" class="spinner-border spinner-border-sm me-2"></span>
-        {{ isLoading ? 'Loading...' : 'Load More Questions' }}
-      </button>
-      
-      <p v-else class="text-muted small">
-        <i class="bi bi-check2-all me-1"></i> All questions loaded
-      </p>
-    </div>
+            <button v-if="nextUrl" @click="fetchQuestions(nextUrl)" :disabled="isLoading"
+              class="btn btn-outline-primary px-5 rounded-pill shadow-sm">
+              <span v-if="isLoading" class="spinner-border spinner-border-sm me-2"></span>
+              {{ isLoading ? 'Loading...' : 'Load More Questions' }}
+            </button>
+
+            <p v-else class="text-muted small">
+              <i class="bi bi-check2-all me-1"></i> All questions loaded
+            </p>
+          </div>
         </form>
       </div>
     </div>
