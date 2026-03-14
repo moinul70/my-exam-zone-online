@@ -1,7 +1,9 @@
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from "vue";
+import { ref, onMounted, onUnmounted, computed, nextTick } from "vue";
 import api from "../../services/api";
 import { useRouter } from 'vue-router'
+import VideoRecorder from "./VideoRecorder.vue";
+import ChatboxAi from "./ChatBoxAi.vue";
 
 
 const examCompletedFlag = ref(false);
@@ -21,6 +23,28 @@ const pagination = ref({
   prev: null,
 });
 const topic = useRouter().currentRoute.value.params.topic
+const recorder = ref(null);
+const examStarted = ref(false);
+const recordedVideoBlob = ref(null);
+
+// This runs when the child emits 'video-ready'
+const handleVideoReady = (blob) => {
+  recordedVideoBlob.value = blob;
+};
+const startExam = async () => {
+  examStarted.value = true;
+
+  // Wait for Vue to update the DOM and "find" the recorder ref
+  await nextTick();
+
+  if (recorder.value) {
+    await recorder.value.startCapture();
+    recorder.value.startRecording();
+    
+  } else {
+    console.error("Recorder ref is still null!");
+  }
+};
 const fetchExamDetails = async (url = `/get-exam-details/${topic}`) => {
   try {
     const response = await api.get(url);
@@ -148,8 +172,21 @@ const completExam = async () => {
   }
 
   try {
-    await api.post("/submit-exam", {
-      exam_id: examDetails.value.id
+    const formData = new FormData();
+    const finalBlob = await recorder.value.stopRecording();
+if (finalBlob instanceof Blob) {
+    console.log("✅ Video Captured!");
+    console.log("Size:", (finalBlob.size / 1024 / 1024).toFixed(2) + " MB");
+    console.log("MIME Type:", finalBlob.type);
+} else {
+    console.error("❌ Video capture failed or returned null");
+}
+    formData.append('exam_id', examDetails.value.id);
+    formData.append('video_evidence', finalBlob, 'proctoring.webm');
+    await api.post("/submit-exam", formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
     });
     examCompletedFlag.value = true;
     alert("Exam completed successfully!");
@@ -160,6 +197,7 @@ const completExam = async () => {
     });
 
   } catch (err) {
+  
     console.error("Error completing exam:", err);
     alert(err.response?.data?.message || "Failed to complete exam");
   }
@@ -187,20 +225,7 @@ const formatTime = (seconds) => {
 
 let timerInterval = null;
 
-const startTimer = () => {
-  // Prevent multiple intervals from starting if fetchQuestions is called again
-  if (timerInterval) return;
 
-  timerInterval = setInterval(() => {
-    if (estimatedTime.value > 0) {
-      estimatedTime.value--;
-    } else {
-      stopTimer();
-      alert("Time's up! Exam will be submitted.");
-      completExamByTimesUp();
-    }
-  }, 1000);
-};
 
 const stopTimer = () => {
   if (timerInterval) {
@@ -218,12 +243,34 @@ const timerClass = computed(() => {
 });
 
 onMounted(async () => {
-  // 1. Fetch questions (doesn't affect the timer ref)
-  await fetchQuestions();
-  await fetchExamDetails();
-  // 2. Start the countdown
+  loading.value = true;
+  
+  // 1. Load all data
+  await Promise.all([fetchQuestions(), fetchExamDetails()]);
+  
+  // 2. Initialize the Proctoring/Camera
+  // This handles the examStarted toggle and the recorder ref wait
+  await startExam(); 
+
+  // 3. Only start the timer once the camera is ready
   startTimer();
+  
+  loading.value = false;
 });
+
+const startTimer = () => {
+  if (timerInterval) return;
+
+  timerInterval = setInterval(() => {
+    if (estimatedTime.value > 0) {
+      estimatedTime.value--;
+    } else {
+      stopTimer();
+      alert("Time's up! Exam will be submitted.");
+      completExamByTimesUp();
+    }
+  }, 1000);
+};
 
 // Cleanup timer if the user leaves the page
 onUnmounted(() => {
@@ -232,6 +279,11 @@ onUnmounted(() => {
 </script>
 <template>
   <div class="container my-4">
+  <div class="proctoring-sidebar">
+      <div class="exam-container">
+    <VideoRecorder ref="recorder" @video-ready="uploadVideo" />
+  </div>
+    </div>
     <div class="row justify-content-center">
       <div class="col-12">
         <div class="card shadow-sm">
@@ -320,6 +372,7 @@ onUnmounted(() => {
       </div>
     </div>
   </div>
+  <ChatboxAi />
 </template>
 <style scoped>
 .timer-card {

@@ -36,7 +36,13 @@ onMounted(async () => {
             <h5 class="mb-3">Total Questions: {{ examData?.question_count }}</h5>
             <h5 class="mb-3">Total Marks: {{ examData?.total_score }}</h5>
             <h5 class="mb-3">Total Time: {{ examData?.estimated_time }} mins</h5>
-          
+          <div class="alert alert-info border-info d-flex align-items-center" role="alert">
+              <i class="bi bi-info-circle-fill me-2"></i>
+              <div>
+                <strong>Note:</strong> This exam is being recorded for proctoring purposes. 
+                Do not stop the video and <strong>do not reload the page</strong>, or your attempt may be invalidated.
+              </div>
+            </div>
             <form>
               <div class="mb-2">
                 <button type="button" class="btn btn-outline-warning" @click="startExam">

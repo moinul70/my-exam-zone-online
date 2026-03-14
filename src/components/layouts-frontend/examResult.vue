@@ -58,6 +58,12 @@ onMounted(async () => {
               </div>
               <div class="col-12">
                 <div class="p-3 border rounded-3 bg-light d-flex justify-content-between align-items-center">
+                  <span class="text-muted"><i class="bi bi-question me-2"></i>Questions To Correct</span>
+                  <span class="fw-bold">{{ examResultData?.correct_answers_questions }}</span>
+                </div>
+              </div>
+              <div class="col-12">
+                <div class="p-3 border rounded-3 bg-light d-flex justify-content-between align-items-center">
                   <span class="text-muted"><i class="bi bi-clock-history me-2"></i>Achieved Score</span>
                   <span class="fw-bold">{{ examResultData?.examDetails[0]?.achieve_score }}</span>
                 </div>
