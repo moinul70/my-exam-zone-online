@@ -26,8 +26,8 @@ import { ref } from "vue";
             <span class="badge bg-info mb-3">Beginner → Advanced</span>
 
             <div class="d-grid gap-2">
-              <a href="#" class="btn btn-primary">Practice PHP</a>
-              <a href="#" class="btn btn-outline-primary">Take PHP Exam</a>
+               <router-link class="btn btn-warning text-dark" :to="{ name: 'practice', params: { topic:'php'  }}">Practice PHP</router-link> 
+               <router-link class="btn btn-outline-warning text-dark" :to="{ name: 'prepare-exam', params: { topic:'php'  }}">Take PHP Exam</router-link> 
             </div>
           </div>
         </div>
@@ -46,8 +46,8 @@ import { ref } from "vue";
             <span class="badge bg-success mb-3">Intermediate</span>
 
             <div class="d-grid gap-2">
-              <a href="#" class="btn btn-success">Practice Golang</a>
-              <a href="#" class="btn btn-outline-success">Take Golang Exam</a>
+              <router-link class="btn btn-warning text-dark" :to="{ name: 'practice', params: { topic:'golang'  }}">Practice Golang</router-link> 
+               <router-link class="btn btn-outline-warning text-dark" :to="{ name: 'prepare-exam', params: { topic:'golang'  }}">Take Golang Exam</router-link>
             </div>
           </div>
         </div>
@@ -71,6 +71,26 @@ import { ref } from "vue";
              <router-link class="btn btn-warning text-dark" :to="{ name: 'practice', params: { topic:'aws'  }}">Practice AWS</router-link> 
              <router-link class="btn btn-outline-warning text-dark" :to="{ name: 'prepare-exam', params: { topic:'aws'  }}">Take AWS Exam</router-link> 
               
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Class 9 Physics -->
+      <div class="col-12 col-md-4">
+        <div class="card h-100 shadow-sm text-center">
+          <div class="card-body">
+            <h4 class="card-title fw-bold">Physics</h4>
+            <p class="text-muted">
+              Chapters: Motion, Force, Work, Energy, Sound, and Light. Practice
+              questions for Class 9 Physics exams.
+            </p>
+
+            <span class="badge bg-success mb-3">Intermediate</span>
+
+            <div class="d-grid gap-2">
+              <router-link class="btn btn-warning text-dark" :to="{ name: 'practice', params: { topic:'physics-class-9'  }}">Practice Physics</router-link> 
+               <router-link class="btn btn-outline-warning text-dark" :to="{ name: 'prepare-exam', params: { topic:'physics'  }}">Take Physics Exam</router-link>
             </div>
           </div>
         </div>

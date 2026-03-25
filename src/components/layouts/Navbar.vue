@@ -19,6 +19,7 @@ const toggleSidebar = () => {
       <nav class="app-header navbar navbar-expand bg-body">
         <!--begin::Container-->
         <div class="container-fluid">
+       
           <!--begin::Start Navbar Links-->
           <ul class="navbar-nav">
             <li class="nav-item">
@@ -51,7 +52,7 @@ const toggleSidebar = () => {
                   <div class="d-flex">
                     <div class="flex-shrink-0">
                       <img
-                        src="../assets/img/user1-128x128.jpg"
+                        src="#"
                         alt="User Avatar"
                         class="img-size-50 rounded-circle me-3"
                       />
@@ -77,7 +78,7 @@ const toggleSidebar = () => {
                   <div class="d-flex">
                     <div class="flex-shrink-0">
                       <img
-                        src="../assets/img/user8-128x128.jpg"
+                        src="#"
                         alt="User Avatar"
                         class="img-size-50 rounded-circle me-3"
                       />
@@ -103,7 +104,7 @@ const toggleSidebar = () => {
                   <div class="d-flex">
                     <div class="flex-shrink-0">
                       <img
-                        src="../assets/img/user3-128x128.jpg"
+                        src="#"
                         alt="User Avatar"
                         class="img-size-50 rounded-circle me-3"
                       />
@@ -168,7 +169,7 @@ const toggleSidebar = () => {
             <li class="nav-item dropdown user-menu">
               <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
                 <img
-                  src="../assets/img/user2-160x160.jpg"
+                  src="#"
                   class="user-image rounded-circle shadow"
                   alt="User Image"
                 />
@@ -178,7 +179,7 @@ const toggleSidebar = () => {
                 <!--begin::User Image-->
                 <li class="user-header text-bg-primary">
                   <img
-                    src="../assets/img/user2-160x160.jpg"
+                    src="#"
                     class="rounded-circle shadow"
                     alt="User Image"
                   />
@@ -215,3 +216,9 @@ const toggleSidebar = () => {
       </nav>
       <!--end::Header-->
 </template>
+<style scoped>
+.logo {
+  height: 50px; /* Adjust based on your layout */
+  width: auto;
+}
+</style>

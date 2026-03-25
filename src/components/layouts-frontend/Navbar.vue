@@ -16,10 +16,12 @@ const toggleSidebar = () => {
 </script>
 
 <template>
+  <link rel="icon" type="image/png" href="../../assets/examzone-logo.png">
   <!--begin::Header-->
       <nav class="app-header navbar navbar-expand bg-body">
         <!--begin::Container-->
        <div class="container-fluid">
+     
   <!-- Left Side Links -->
   <ul class="navbar-nav">
     <li class="nav-item d-none d-md-block"><a href="/" class="nav-link">Home</a></li>
