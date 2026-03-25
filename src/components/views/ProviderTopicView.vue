@@ -26,8 +26,7 @@ import { ref } from "vue";
             <span class="badge bg-info mb-3">Beginner → Advanced</span>
 
             <div class="d-grid gap-2">
-              <a href="#" class="btn btn-primary">Practice PHP</a>
-              <a href="#" class="btn btn-outline-primary">Take PHP Exam</a>
+               <router-link class="btn btn-outline-warning text-dark" :to="{ name: 'provider-questions-answer', params: { topic:'php'  }}">Inside Details</router-link>
             </div>
           </div>
         </div>
@@ -58,10 +57,11 @@ import { ref } from "vue";
         <div class="card h-100 shadow-sm text-center">
           <div class="card-body">
             <h4 class="card-title fw-bold">AWS</h4>
-<span class="badge bg-success mb-3">Intermediate</span>
+            <span class="badge bg-success mb-3">Intermediate</span>
             <div class="d-grid gap-2">
-             <router-link class="btn btn-outline-warning text-dark" :to="{ name: 'provider-questions-answer', params: { topic:'aws'  }}">Inside Details</router-link> 
-              
+              <router-link class="btn btn-outline-warning text-dark"
+                :to="{ name: 'provider-questions-answer', params: { topic: 'aws' } }">Inside Details</router-link>
+
             </div>
           </div>
         </div>
